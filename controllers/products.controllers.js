@@ -1,4 +1,4 @@
-const { products } = require("../models/products.model");
+const products  = require("../models/products.model");
 
 /// [GET] Featch all product list
 module.exports.getAllProducts = (req,res)=>{
@@ -11,19 +11,29 @@ module.exports.getAllProducts = (req,res)=>{
 
 
 /// [POST] Add a new product
-module.exports.addProduct = (req,res)=>{
+module.exports.addProduct = async (req,res)=>{
+    try{
+        const {name,category,price,stock,description,images} = req.body;
+        console.log(images);
 
-    const {name,category,price,stock,description,image} = req.body;
-    products.push({
-        id : products.length + 1,
-        name,category,price,stock,description,image
-    });
 
-    res.status(200).json({
-        status: 200,
-        message: "You have created a product.",
-        data: products
-    });
+        const newProduct = new products({
+            name,
+            category,
+            price : Number(price),
+            stock : Number(stock),
+            description,
+            images: images
+        });
+        await newProduct.save();
+        
+        res.status(201).json(newProduct);
+    }catch(e){
+        res.status(501).json({
+            status: false,
+            message: e.message
+        })
+    }
 }
 
 
