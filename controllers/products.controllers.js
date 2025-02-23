@@ -1,12 +1,21 @@
-const products  = require("../models/products.model");
+const Products  = require("../models/products.model");
 
 /// [GET] Featch all product list
-module.exports.getAllProducts = (req,res)=>{
-    res.status(200).json({
-        succress: true,
-        message: "Product sucessfully fetched.",
-        data: products
-    });
+module.exports.getAllProducts = async (req,res)=>{
+    try {
+        const products = await Products.find(); 
+        res.status(200).json({
+            status: true,
+            message: "Success",
+            data: products
+        });
+    } catch (error) {
+        res.status(501).json({
+            status: false,
+            message: error.message
+        });
+        console.error("Error fetching products:", error);
+    }
 };
 
 
@@ -16,8 +25,7 @@ module.exports.addProduct = async (req,res)=>{
         const {name,category,price,stock,description,images} = req.body;
         console.log(images);
 
-
-        const newProduct = new products({
+        const newProduct = new Products({
             name,
             category,
             price : Number(price),
@@ -28,49 +36,79 @@ module.exports.addProduct = async (req,res)=>{
         await newProduct.save();
         
         res.status(201).json(newProduct);
-    }catch(e){
+    }catch(error){
         res.status(501).json({
             status: false,
-            message: e.message
-        })
+            message: error.message
+        });
     }
 }
 
 
 /// [PUT] Update a product
-module.exports.updateProduct = (req,res)=>{
+module.exports.updateProduct = async (req, res) => {
+    try {
+        const { id } = req.params; // Extract `_id` from request URL
+        const updateData = req.body; // Get the fields to update
 
-    const id = parseInt(req.params.id);
-    const product = products.find((p) => p.id === id);
-     
-    const {name,category,price,stock,description,image} = req.body;
+        // Find the product by `_id` and update it
+        const updatedProduct = await Products.findByIdAndUpdate(
+            id,
+            { $set: updateData }, // Update only provided fields
+            { new: true } // Return the updated document
+        );
 
-    if(name) product.name = name;
-    if(category) product.category = category;
-    if(price) product.price = parseFloat(price);
-    if(stock) product.stock = stock;
-    if(description) product.description = description;
-    if(image) product.image = image;
+        // If product not found
+        if (!updatedProduct) {
+            return res.status(404).json({
+                status: false,
+                message: "Product not found"
+            });
+        }
 
+        res.status(200).json({
+            status: true,
+            message: "Product updated successfully",
+            data: updatedProduct
+        });
 
-    res.status(200).json({
-        status: 200,
-        message: "Updated",
-        data: products
-    });
-}
+    } catch (error) {
+        console.error("Error updating product:", error);
+        res.status(500).json({
+            status: false,
+            message: error.message
+        });
+    }
+};
 
 
 /// [DELETE]: Delete a product
-module.exports.deleteProduct = (req,res)=>{
-   
-    const id = parseInt(req.params.id);
-    const productIndex = products.findIndex((p)=> p.id === id);
-    products.splice(productIndex,1);
+module.exports.deleteProduct = async (req, res) => {
+    try {
+        const { id } = req.params; // Extract `_id` from request URL
 
-    res.status(200).json({
-        status: 200,
-        message: "Deleted Products",
-        data: products
-    });
-}
+        // Find and delete the product by `_id`
+        const deletedProduct = await Products.findByIdAndDelete(id);
+
+        // If product not found
+        if (!deletedProduct) {
+            return res.status(404).json({
+                status: false,
+                message: "Product not found"
+            });
+        }
+
+        res.status(200).json({
+            status: true,
+            message: "Product deleted successfully",
+            data: deletedProduct
+        });
+
+    } catch (error) {
+        console.error("Error deleting product:", error);
+        res.status(500).json({
+            status: false,
+            message: error.message
+        });
+    }
+};
