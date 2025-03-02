@@ -1,26 +1,46 @@
+const User = require("../models/user.model");
+const bcrypt = require("bcrypt");
 
-module.exports.login = (req,res)=>{
-    const {email, password} = req.body;
-    res.status(200).json({
-        status : 200,
-        message: "Success",
-        data: {
-            email,
-            password
-        }
-    });
-}
+const SALT_ROUNDS = 10;
 
-module.exports.register = (req,res)=>{
-    const {name, email, phone, password} = req.body;
-    res.status(200).json({
-        status : 200,
-        message: "Your account create sucessfull.",
-        data: {
-            name,
-            email,
-            phone,
-            password
+/**
+ * Login User
+ */
+module.exports.login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ status: 404, message: "Email not found" });
         }
-    });
-}
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ status: 401, message: "Incorrect password" });
+        }
+
+        res.status(200).json({ status: 200, message: "Login successful", data: user });
+
+    } catch (error) {
+        res.status(500).json({ status: 500, message: "Internal Server Error", error: error.message });
+    }
+};
+
+/**
+ * Register User
+ */
+module.exports.register = async (req, res) => {
+    try {
+        const { name, email, phone, password } = req.body;
+
+        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+        const newUser = await User.create({ name, email, phone, password: hashedPassword });
+
+        res.status(201).json({ status: 201, message: "Account created successfully", data: newUser });
+
+    } catch (error) {
+        res.status(500).json({ status: 500, message: "Internal Server Error", error: error.message });
+    }
+};
