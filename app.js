@@ -3,6 +3,7 @@ const authRouter = require("./routes/auth.routes");
 const productsRouter = require("./routes/products.routes");
 const { notFound } = require("./middlewares/notFoundHandler");
 const { errorHandler } = require("./middlewares/errorHandler");
+const { authCheck } = require("./middlewares/jwt");
 
 const app = express();
 
@@ -12,7 +13,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Route handlers
 app.use("/auth", authRouter);
-app.use("/products", productsRouter);
+app.use("/products", authCheck, productsRouter);
 
 // Handle 404 - Not Found
 app.use(notFound);

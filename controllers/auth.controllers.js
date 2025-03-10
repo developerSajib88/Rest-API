@@ -1,6 +1,7 @@
 const User = require("../models/user.model");
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-
+require("dotenv").config();
 const SALT_ROUNDS = 10;
 
 /**
@@ -20,7 +21,26 @@ module.exports.login = async (req, res) => {
             return res.status(401).json({ status: 401, message: "Incorrect password" });
         }
 
-        res.status(200).json({ status: 200, message: "Login successful", data: user });
+        const payload = {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone
+        };
+
+        const token = jwt.sign(payload, process.env.JWT_SECRET, {expiresIn: "1h"});
+        
+        res.status(200).json({ 
+            status: 200,
+            message: "Login successful",
+            accessToken: token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+            } 
+        });
 
     } catch (error) {
         res.status(500).json({ status: 500, message: "Internal Server Error", error: error.message });

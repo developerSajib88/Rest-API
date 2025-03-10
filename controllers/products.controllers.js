@@ -2,6 +2,7 @@ const Products  = require("../models/products.model");
 
 /// [GET] Featch all product list
 module.exports.getAllProducts = async (req,res)=>{
+    console.log(`*************************${req}`)
     try {
         const products = await Products.find(); 
         res.status(200).json({
